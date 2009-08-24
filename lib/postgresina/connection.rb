@@ -1,5 +1,7 @@
 class Postgresina::Connection
 
+  TYPES = {}
+
   class << self
 
     # options are like the hash of options passed to PGconn.new
@@ -19,6 +21,8 @@ class Postgresina::Connection
     # +:service+ - service name to use for additional parameters
     def connect(options={})
       @connection = PGconn.new(options)
+      load_default_types
+      @connection
     end
 
     # returns an instance of PGconn
@@ -31,6 +35,14 @@ class Postgresina::Connection
       !!(@connection && @connection.status == PGconn::CONNECTION_OK)
     rescue PGError
       false
+    end
+
+  private
+
+    def load_default_types
+      results = connection.exec("SELECT typname, typelem FROM pg_type WHERE typname ~ '^_'")
+      results.each { |result| TYPES[result['typelem']] = result['typname'] }
+      TYPES.freeze
     end
 
   end
