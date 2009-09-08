@@ -37,7 +37,7 @@ private
 
   def reify!(index)
     return nil if @data.empty?
-    @data[index] ||= @klass.new(@result[index])
+    @data[index] ||= @klass.new(@result[index], @result)
   end
 
 end

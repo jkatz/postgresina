@@ -1,6 +1,22 @@
+require 'time'
+
 class Postgresina::Connection
 
   TYPES = {}
+  TYPE_MAP = {
+    '_bool' => lambda { |x|
+        case x
+        when 'TRUE', 't', 'true', 'y', 'yes', '1'
+          true
+        when 'FALSE', 'f', 'false', 'f', 'no', '0'
+          false
+        end
+      },
+    '_int4' => lambda { |x| x.to_i },
+    '_text' => lambda { |x| x.to_s },
+    '_timestamp' => lambda { |x| Time.parse(x) },
+    '_varchar' => lambda { |x| x.to_s }
+  }
 
   class << self
 
@@ -41,7 +57,7 @@ class Postgresina::Connection
 
     def load_default_types
       results = connection.exec("SELECT typname, typelem FROM pg_type WHERE typname ~ '^_'")
-      results.each { |result| TYPES[result['typelem']] = result['typname'] }
+      results.each { |result| TYPES[result['typelem'].to_i] = result['typname'] }
       TYPES.freeze
     end
 
