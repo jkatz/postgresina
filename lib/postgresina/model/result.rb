@@ -17,6 +17,10 @@ class Postgresina::Model::Result
     self
   end
 
+  def empty?
+    @data.empty?
+  end
+
   def first
     reify!(0)
   end
