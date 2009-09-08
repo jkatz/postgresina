@@ -20,10 +20,6 @@ class Postgresina::Model
       end
     end
 
-    def inspect
-      @table_name
-    end
-
     def prepare(statement, sql)
       puts "Creating statement: #{statement}"
       connection.prepare(statement, sql)
@@ -42,11 +38,13 @@ class Postgresina::Model
     def find_one(id)
       statement = "#{@table_name}-find-one"
       bindings = [{:value => id}]
-      select_prepared(statement, bindings)
+      result = select_prepared(statement, bindings)
+      result.any? ? new(result[0]) : nil
     rescue PGError
       sql = "SELECT * FROM #{@table_name} WHERE id=$1"
       prepare(statement, sql)
-      select_prepared(statement, bindings)
+      result = select_prepared(statement, bindings)
+      result.any? ? new(result[0]) : nil
     end
 
     def find_many(ids)
@@ -60,7 +58,8 @@ class Postgresina::Model
         WHERE id IN (#{connection.escape_string(ids.join(','))})
       SQL
       prepare(statement, sql)
-      select_prepared(statement)
+      results = select_prepared(statement)
+      Result.new(self, results)
     end
 
   end
@@ -76,8 +75,6 @@ class Postgresina::Model
   end
 
 private
-
-  
 
 end
 
