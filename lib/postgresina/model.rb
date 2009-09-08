@@ -72,9 +72,14 @@ class Postgresina::Model
     def set_column_types!
       result = connection.exec("SELECT * FROM #{@table_name} LIMIT 1")
       (0...result.num_fields).each do |i|
-        column_types[result.fields[i]] = Postgresina::Connection::TYPE_MAP[
+        column_name = result.fields[i]
+        column_types[column_name] = Postgresina::Connection::TYPE_MAP[
           Postgresina::Connection::TYPES[result.ftype(i)]
         ]
+        self.class_eval <<-RUBY
+          def #{column_name}; instance_variable_get("@#{column_name}"); end
+          def #{column_name}=(v); instance_variable_set("@#{column_name}", v); end
+        RUBY
       end
     end
 
@@ -84,10 +89,6 @@ class Postgresina::Model
     attributes.each do |k,v|
       value = result && v ? self.class.column_types[k].call(v) : v
       instance_variable_set("@#{k}", value)
-      self.instance_eval <<-RUBY
-        def #{k}; instance_variable_get("@#{k}"); end
-        def #{k}=(v); instance_variable_set("@#{k}", v); end
-      RUBY
     end
   end
 
