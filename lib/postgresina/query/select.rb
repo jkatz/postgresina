@@ -2,11 +2,15 @@ module Postgresina
 
   module Query
 
-    class Select < Base
+    class Select < Query
+
+      class SelectError < QueryError; end
+
+      # select.from('users').where('id = 1').and(name = 'bob')
+      # select.from('users').where('id = 1').and(name = 'bob')
 
       def initialize
         @joins = []
-        @where = []
       end
 
       def from(from)
@@ -38,20 +42,22 @@ module Postgresina
       end
 
       def to_sql
-        sql = "("
-        sql += "SELECT *"
+        sql = "SELECT *"
         sql += " FROM #{@from}" if @from
         sql += prepare_joins if @joins.any?
-        sql += " WHERE #{@where.join(' AND ' )}" if @where.any?
+        sql += prepare_conditions if @where
         sql += " ORDER BY #{@order_by}" if @order_by
         sql += " LIMIT #{@limit}" if @limit
         sql += " OFFSET #{@offset}" if @offset
-        sql += ")"
         sql
       end
 
-      def where(condition)
-        @where << condition
+      # need to handle:
+      # WHERE cond1 AND cond2 AND ...
+      # WHERE a IN (SELECT ...)
+      # 
+      def where(where)
+        @where = where
         self
       end
 
@@ -60,6 +66,17 @@ module Postgresina
       def add_join(type, table, conditions)
         @joins << { :table => table, :type => type, :conditions => conditions }
         self
+      end
+
+      def prepare_conditions
+        sql = ''
+        case @where
+        when String
+          sql += " WHERE #{@where}"
+        when Array
+          sql += " WHERE #{parse_conjunctions(@where)}"
+        end
+        sql
       end
 
       def prepare_joins

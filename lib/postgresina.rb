@@ -5,7 +5,7 @@ module Postgresina
   autoload :Model, 'postgresina/model'
 
   module Query
-    autoload :Base, 'postgresina/query/base'
+    autoload :Query, 'postgresina/query/query'
     autoload :Select, 'postgresina/query/select'
   end
 
